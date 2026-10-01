@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мастер отделки — modern GSAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@200..800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F1ED;--fg:#0F0F0E;--mut:#8A8780;--acc:#FF5B1F;--card:#E6E4DE;--r:28px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:'Geologica',sans-serif}
+body{overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.lbl{font-size:13px;color:var(--mut)}
+.grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:80;opacity:.35;mix-blend-mode:multiply}
+
+/* floating nav */
+.nav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:6px;padding:6px;border-radius:999px;background:rgba(242,241,237,.7);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(15,15,14,.08)}
+.nav a{padding:10px 16px;border-radius:999px;font-size:14px}
+.nav a:hover{background:rgba(15,15,14,.06)}
+.nav .go{background:var(--fg);color:var(--bg)}
+.nav .go:hover{background:var(--acc);color:var(--fg)}
+@media(max-width:640px){.nav .hide{display:none}}
+
+/* hero */
+.hero{min-height:100svh;padding:120px 24px 40px;display:flex;flex-direction:column;justify-content:space-between;gap:48px}
+.h1{--w:420;font-size:clamp(48px,10.5vw,176px);line-height:.95;letter-spacing:-.05em;margin:0;font-weight:var(--w)}
+.row{display:block;overflow:hidden;padding-bottom:.06em}
+.w{display:inline-block}
+.acc{color:var(--acc)}
+.pill{display:inline-block;width:2.1em;height:.78em;border-radius:999px;overflow:hidden;vertical-align:-.04em;margin:0 .06em;background:#cfc6b6}
+.pill svg,.zoom svg,.ba svg{width:100%;height:100%;display:block}
+.hero-foot{display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end}
+.hero-foot p{margin:0;max-width:440px;font-size:18px;line-height:1.55;font-weight:300}
+.cta-btn{display:inline-flex;align-items:center;gap:12px;height:64px;padding:0 10px 0 28px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:16px}
+.cta-btn i{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--acc);color:var(--fg);font-style:normal}
+@media(max-width:760px){.hero-foot{grid-template-columns:1fr}.hero-foot .cta-btn{justify-self:start}}
+
+/* zoom */
+.zoom{position:relative;height:100vh;overflow:hidden}
+.zoom .media{position:absolute;inset:0;clip-path:inset(36% 30% 36% 30% round 999px)}
+.zoom .cap{position:absolute;left:24px;right:24px;bottom:40px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;color:#fff;mix-blend-mode:difference;flex-wrap:wrap}
+.zoom .cap b{font-size:clamp(32px,5vw,80px);font-weight:400;letter-spacing:-.04em;line-height:1}
+
+/* words reveal */
+.manifest{padding:160px 24px;max-width:1240px;margin:0 auto}
+.manifest p{margin:0;font-size:clamp(30px,4.4vw,68px);line-height:1.12;letter-spacing:-.035em;font-weight:400}
+.manifest .wd{opacity:.14}
+
+/* bento */
+.bento{padding:0 24px 160px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;max-width:1440px;margin:0 auto}
+.tile{background:var(--card);border-radius:var(--r);padding:28px;display:flex;flex-direction:column;justify-content:space-between;min-height:260px}
+.tile b{font-size:clamp(44px,5vw,84px);font-weight:400;letter-spacing:-.05em;line-height:.9}
+.t-big{grid-column:span 2;grid-row:span 2;background:var(--fg);color:var(--bg)}
+.t-acc{background:var(--acc)}
+@media(max-width:900px){.bento{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* stacking services */
+.stack{padding:0 24px 120px;max-width:1440px;margin:0 auto}
+.stack h2,.ba-wrap h2{font-size:clamp(40px,7vw,112px);font-weight:400;letter-spacing:-.05em;margin:0 0 48px;line-height:.95}
+.scard{position:sticky;height:72vh;min-height:440px;border-radius:var(--r);padding:clamp(24px,4vw,48px);display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:24px;transform-origin:50% 0;overflow:hidden}
+.scard h3{margin:0;font-size:clamp(40px,6vw,96px);font-weight:400;letter-spacing:-.05em;line-height:.95}
+.scard p{margin:0;font-size:18px;line-height:1.55;font-weight:300;max-width:380px}
+.scard .meta{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;text-align:right}
+.scard .price{font-size:clamp(24px,2.6vw,36px);letter-spacing:-.03em}
+@media(max-width:760px){.scard{grid-template-columns:1fr}.scard .meta{align-items:flex-start;text-align:left}}
+
+/* before / after */
+.ba-wrap{padding:80px 24px 160px;max-width:1440px;margin:0 auto}
+.ba{position:relative;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;cursor:ew-resize;touch-action:pan-y;user-select:none}
+.ba .after{position:absolute;inset:0;clip-path:inset(0 0 0 50%);background:#E3DDD1}
+.ba .handle{position:absolute;top:0;bottom:0;left:50%;width:2px;background:#fff}
+.ba .handle span{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:20px}
+.ba .tag{position:absolute;top:20px;padding:8px 14px;border-radius:999px;background:rgba(15,15,14,.75);color:#fff;font-size:13px}
+@media(max-width:760px){.ba{aspect-ratio:4/5}}
+
+/* gallery */
+.gal{padding:40px 24px 200px;max-width:1440px;margin:0 auto}
+.gal-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:48px}
+.gal-head h2{font-size:clamp(40px,7vw,112px);font-weight:400;letter-spacing:-.05em;margin:0;line-height:.95}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-size:14px;height:44px;padding:0 18px;border-radius:999px;border:1px solid rgba(15,15,14,.15);background:transparent;color:var(--fg);cursor:pointer}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.col{display:flex;flex-direction:column;gap:12px}
+.col:nth-child(2){margin-top:120px}
+.item{position:relative;border-radius:20px;overflow:hidden;cursor:zoom-in;background:var(--card)}
+.item .m{position:absolute;inset:0;overflow:hidden;border-radius:20px}
+.item .m svg{width:100%;height:110%;display:block}
+.item figcaption{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;gap:8px;padding:10px 14px;border-radius:14px;background:rgba(242,241,237,.85);backdrop-filter:blur(8px);font-size:13px;transform:translateY(130%);transition:transform .5s cubic-bezier(.22,1,.36,1)}
+.item:hover figcaption,.item:focus-visible figcaption{transform:none}
+.item:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}.col:nth-child(2){margin-top:0}.item figcaption{transform:none}}
+.lb{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:4vh 4vw;background:rgba(15,15,14,0)}
+.lb.open{display:flex}
+.lb-box{position:relative;width:min(1200px,100%);height:min(80vh,100%)}
+.lb-box .m{position:absolute;inset:0;border-radius:24px;overflow:hidden}
+.lb-box .m svg{width:100%;height:100%;display:block}
+.lb-ui{position:absolute;left:0;right:0;bottom:-56px;display:flex;justify-content:space-between;align-items:center;color:var(--bg);font-size:14px}
+.lb-close{position:absolute;top:20px;right:20px;width:52px;height:52px;border-radius:50%;border:0;background:var(--bg);font-size:20px;cursor:pointer;z-index:2}
+
+/* reviews */
+.rev{padding:40px 0 160px;overflow:hidden}
+.rev-head{padding:0 24px;max-width:1440px;margin:0 auto 40px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.rev h2,.faq h2,.lead h2{font-size:clamp(40px,7vw,112px);font-weight:400;letter-spacing:-.05em;margin:0;line-height:.95}
+.rtrack{display:flex;gap:12px;width:max-content;padding-left:24px}
+.rcard{width:min(80vw,420px);min-height:280px;border-radius:var(--r);background:var(--card);padding:28px;display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+.rcard q{font-size:20px;line-height:1.45;letter-spacing:-.01em;quotes:none}
+.rcard .who{display:flex;align-items:center;gap:12px;font-size:14px}
+.rcard .av{width:44px;height:44px;border-radius:50%;background:#D2CFC7}
+.rcard.dark{background:var(--fg);color:var(--bg)}
+.rcard.or{background:var(--acc);color:var(--fg)}
+
+/* faq */
+.faq{padding:0 24px 160px;max-width:1440px;margin:0 auto;display:grid;grid-template-columns:1fr 1.6fr;gap:48px}
+.qa{border-top:1px solid rgba(15,15,14,.15)}
+.qa:last-child{border-bottom:1px solid rgba(15,15,14,.15)}
+.qa button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:26px 0;background:none;border:0;font:inherit;font-size:clamp(20px,2vw,28px);letter-spacing:-.02em;text-align:left;color:var(--fg);cursor:pointer}
+.qa .pl{flex-shrink:0;width:44px;height:44px;border-radius:50%;background:var(--card);position:relative}
+.qa .pl::before,.qa .pl::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:2px;margin:-1px 0 0 -7px;background:var(--fg)}
+.qa .pl::after{transform:rotate(90deg)}
+.qa .ans{height:0;overflow:hidden}
+.qa .ans p{margin:0;padding:0 64px 28px 0;font-size:17px;line-height:1.6;font-weight:300;max-width:640px}
+@media(max-width:900px){.faq{grid-template-columns:1fr}}
+
+/* lead form */
+.lead{padding:0 24px 160px;max-width:1440px;margin:0 auto}
+.lbox{border-radius:var(--r);background:var(--card);padding:clamp(24px,5vw,64px);display:grid;grid-template-columns:1fr 1.2fr;gap:56px;position:relative;overflow:hidden}
+.lform{display:flex;flex-direction:column;gap:24px}
+.fl{position:relative}
+.fl input,.fl textarea{width:100%;font:inherit;font-size:18px;background:transparent;border:0;border-bottom:1px solid rgba(15,15,14,.25);padding:26px 0 10px;color:var(--fg);border-radius:0;resize:none}
+.fl input:focus,.fl textarea:focus{outline:none;border-bottom-color:var(--fg)}
+.fl span{position:absolute;left:0;top:24px;font-size:18px;color:var(--mut);pointer-events:none;transform-origin:left top;transition:transform .4s cubic-bezier(.22,1,.36,1),color .3s}
+.fl input:focus+span,.fl input:not(:placeholder-shown)+span,.fl textarea:focus+span,.fl textarea:not(:placeholder-shown)+span{transform:translateY(-20px) scale(.72);color:var(--fg)}
+.tchips{display:flex;flex-wrap:wrap;gap:8px}
+.tchips label{cursor:pointer}
+.tchips input{position:absolute;opacity:0;pointer-events:none}
+.tchips span{display:inline-flex;align-items:center;height:44px;padding:0 18px;border-radius:999px;border:1px solid rgba(15,15,14,.18);font-size:15px;transition:background .3s,color .3s}
+.tchips input:checked+span{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tchips input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
+.area-row{display:flex;flex-direction:column;gap:8px}
+.area-row b{font-size:clamp(40px,5vw,72px);font-weight:400;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.area-row input{width:100%;accent-color:var(--fg);height:40px}
+.upl{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 18px;border-radius:16px;border:1px dashed rgba(15,15,14,.3);cursor:pointer;font-size:15px}
+.upl input{position:absolute;opacity:0;width:1px;height:1px}
+.submit{position:relative;overflow:hidden;height:64px;border-radius:999px;border:0;background:var(--fg);color:var(--bg);font:inherit;font-size:17px;cursor:pointer}
+.submit i{position:absolute;inset:0;background:var(--acc);transform:translateY(101%);border-radius:999px}
+.submit em{position:relative;font-style:normal}
+.done{position:absolute;inset:0;background:var(--fg);color:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:16px;padding:clamp(24px,5vw,64px);clip-path:circle(0% at 80% 90%);visibility:hidden}
+.done b{font-size:clamp(48px,8vw,128px);font-weight:400;letter-spacing:-.05em;line-height:.9}
+@media(max-width:900px){.lbox{grid-template-columns:1fr}}
+
+/* footer */
+.foot{background:var(--fg);color:var(--bg);border-radius:var(--r) var(--r) 0 0;padding:120px 24px 32px;overflow:hidden}
+.foot .big{white-space:nowrap;font-size:clamp(80px,16vw,280px);letter-spacing:-.06em;font-weight:500;line-height:.9}
+.foot .big span{color:var(--acc)}
+.foot .row2{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:80px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.011 0.019" numOctaves="5" seed="7" result="n"/>
+    <feDiffuseLighting in="n" lighting-color="#d6cdbd" surfaceScale="7"><feDistantLight azimuth="225" elevation="30"/></feDiffuseLighting>
+  </filter>
+  <filter id="smooth" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.004" numOctaves="2" seed="2" result="n"/>
+    <feDiffuseLighting in="n" lighting-color="#e9e3d8" surfaceScale="1.2"><feDistantLight azimuth="225" elevation="55"/></feDiffuseLighting>
+  </filter>
+  <filter id="grainf"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .07 0"/></filter>
+</svg>
+<svg class="grain" aria-hidden="true"><rect width="100%" height="100%" filter="url(#grainf)"/></svg>
+
+<nav class="nav">
+  <a href="#" style="font-weight:600">[Имя]</a>
+  <a class="hide" href="#svc">Услуги</a>
+  <a class="hide" href="#works">Работы</a>
+  <a class="go" href="#lead">Замер</a>
+</nav>
+
+<section class="hero">
+  <span class="lbl" data-in>Штукатур-маляр · [Город] · работаю сам, без бригады</span>
+  <h1 class="h1" id="h1">
+    <span class="row"><span class="w">Ровные</span> <span class="pill w" id="pill"><svg><rect width="100%" height="100%" filter="url(#rough)"/></svg></span> <span class="w">стены</span></span>
+    <span class="row"><span class="w">без</span> <span class="w">пыли</span> <span class="w acc">и сюрпризов</span></span>
+  </h1>
+  <div class="hero-foot">
+    <p data-in>Штукатурка, шпаклёвка, покраска и декоративные покрытия. Фиксированная смета до начала работ.</p>
+    <a class="cta-btn" href="#contact" data-in>Рассчитать объект <i>→</i></a>
+  </div>
+</section>
+
+<section class="zoom">
+  <div class="media"><svg><rect width="100%" height="100%" filter="url(#rough)"/></svg></div>
+  <div class="cap"><b>Каждую стену —<br>под боковой свет</b><span class="lbl" style="color:#fff">[Заменить на фото объекта]</span></div>
+</section>
+
+<section class="manifest">
+  <p id="words">Я не сдаю стену, пока она не пройдёт проверку правилом и лампой. Материалы — по чекам, мусор — в тот же день, смета — не меняется после старта.</p>
+</section>
+
+<section class="bento">
+  <div class="tile t-big"><span class="lbl" style="color:#8A8780">Перепад на 2 м</span><b><span id="cnt">4.0</span> → 0 мм</b></div>
+  <div class="tile"><span class="lbl">Опыт</span><b>[N]<small style="font-size:.35em"> лет</small></b></div>
+  <div class="tile t-acc"><span class="lbl" style="color:var(--fg)">Гарантия</span><b>[N]<small style="font-size:.35em"> мес.</small></b></div>
+  <div class="tile" style="grid-column:span 2"><span class="lbl">Смета</span><b style="font-size:clamp(28px,3vw,44px)">Фиксирую до старта — без доплат по ходу</b></div>
+</section>
+
+<section class="stack" id="svc">
+  <h2>Услуги</h2>
+  <article class="scard" style="top:10vh;background:#E6E4DE"><div style="display:flex;flex-direction:column;justify-content:space-between;gap:24px"><span class="lbl">01</span><h3>Штукатурка</h3><p>По маякам, ручная и машинная. Углы 90°, плоскость под правило.</p></div><div class="meta"><span class="lbl">Цена за м²</span><span class="price">от [—] ₽</span></div></article>
+  <article class="scard" style="top:calc(10vh + 20px);background:#D9D6CE"><div style="display:flex;flex-direction:column;justify-content:space-between;gap:24px"><span class="lbl">02</span><h3>Шпаклёвка</h3><p>Под покраску или обои. Два слоя, шлифовка с пылесосом.</p></div><div class="meta"><span class="lbl">Цена за м²</span><span class="price">от [—] ₽</span></div></article>
+  <article class="scard" style="top:calc(10vh + 40px);background:var(--fg);color:var(--bg)"><div style="display:flex;flex-direction:column;justify-content:space-between;gap:24px"><span class="lbl">03</span><h3>Покраска</h3><p>Матовые и минеральные краски. Ровный цвет без полос и переходов.</p></div><div class="meta"><span class="lbl">Цена за м²</span><span class="price">от [—] ₽</span></div></article>
+  <article class="scard" style="top:calc(10vh + 60px);background:var(--acc)"><div style="display:flex;flex-direction:column;justify-content:space-between;gap:24px"><span class="lbl" style="color:var(--fg)">04</span><h3>Декор</h3><p>Известь, микроцемент, травертин. Образец на вашей стене до старта.</p></div><div class="meta"><span class="lbl" style="color:var(--fg)">Цена за м²</span><span class="price">от [—] ₽</span></div></article>
+</section>
+
+<section class="ba-wrap" id="ba">
+  <h2>До / после</h2>
+  <div class="ba" id="baBox">
+    <svg><rect width="100%" height="100%" filter="url(#rough)"/></svg>
+    <div class="after"><svg><rect width="100%" height="100%" filter="url(#smooth)"/></svg></div>
+    <span class="tag" style="left:20px">До</span><span class="tag" style="right:20px">После</span>
+    <div class="handle" id="baHandle"><span>↔</span></div>
+  </div>
+  <p class="lbl" style="margin-top:16px">[Объект, N м², N дней] — заменить на реальные фото</p>
+</section>
+
+<section class="gal" id="works">
+  <div class="gal-head">
+    <h2>Работы</h2>
+    <div class="chips" role="group" aria-label="Фильтр работ">
+      <button class="chip on" data-f="all">Все</button>
+      <button class="chip" data-f="plaster">Штукатурка</button>
+      <button class="chip" data-f="paint">Покраска</button>
+      <button class="chip" data-f="decor">Декор</button>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <figure class="item" tabindex="0" data-cat="plaster" style="aspect-ratio:4/5;margin:0"><div class="m"><svg><rect width="100%" height="100%" filter="url(#rough)"/></svg></div><figcaption><span>[Квартира, ЖК …]</span><span>Штукатурка</span></figcaption></figure>
+      <figure class="item" tabindex="0" data-cat="paint" style="aspect-ratio:1/1;margin:0"><div class="m"><svg><rect width="100%" height="100%" fill="#5E6B63"/><rect width="100%" height="100%" filter="url(#grainf)"/></svg></div><figcaption><span>[Спальня, N м²]</span><span>Покраска</span></figcaption></figure>
+      <figure class="item" tabindex="0" data-cat="decor" style="aspect-ratio:4/3;margin:0"><div class="m"><svg><rect width="100%" height="100%" filter="url(#smooth)"/></svg></div><figcaption><span>[Ванная]</span><span>Микроцемент</span></figcaption></figure>
+    </div>
+    <div class="col">
+      <figure class="item" tabindex="0" data-cat="paint" style="aspect-ratio:3/4;margin:0"><div class="m"><svg><rect width="100%" height="100%" fill="#C7B7A3"/><rect width="100%" height="100%" filter="url(#grainf)"/></svg></div><figcaption><span>[Гостиная]</span><span>Покраска</span></figcaption></figure>
+      <figure class="item" tabindex="0" data-cat="plaster" style="aspect-ratio:4/3;margin:0"><div class="m"><svg><rect width="100%" height="100%" filter="url(#smooth)"/></svg></div><figcaption><span>[Дом, N м²]</span><span>Шпаклёвка</span></figcaption></figure>
+      <figure class="item" tabindex="0" data-cat="decor" style="aspect-ratio:4/5;margin:0"><div class="m"><svg><rect width="100%" height="100%" fill="#2E2C29"/><rect width="100%" height="100%" filter="url(#rough)" opacity=".35"/></svg></div><figcaption><span>[Кабинет]</span><span>Известь</span></figcaption></figure>
+    </div>
+    <div class="col">
+      <figure class="item" tabindex="0" data-cat="decor" style="aspect-ratio:1/1;margin:0"><div class="m"><svg><rect width="100%" height="100%" fill="#B8A48A"/><rect width="100%" height="100%" filter="url(#rough)" opacity=".5"/></svg></div><figcaption><span>[Прихожая]</span><span>Травертин</span></figcaption></figure>
+      <figure class="item" tabindex="0" data-cat="plaster" style="aspect-ratio:3/4;margin:0"><div class="m"><svg><rect width="100%" height="100%" filter="url(#rough)"/></svg></div><figcaption><span>[Офис]</span><span>Штукатурка</span></figcaption></figure>
+      <figure class="item" tabindex="0" data-cat="paint" style="aspect-ratio:4/3;margin:0"><div class="m"><svg><rect width="100%" height="100%" fill="#FF5B1F"/><rect width="100%" height="100%" filter="url(#grainf)"/></svg></div><figcaption><span>[Детская]</span><span>Покраска</span></figcaption></figure>
+    </div>
+  </div>
+  <p class="lbl" style="margin-top:20px">Плашки — заглушки, заменить на фото объектов</p>
+</section>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Просмотр работы">
+  <button class="lb-close" id="lbClose" aria-label="Закрыть">✕</button>
+  <div class="lb-box" id="lbBox"><div class="lb-ui"><span id="lbCap"></span><span>Esc — закрыть</span></div></div>
+</div>
+
+<section class="rev" id="reviews">
+  <div class="rev-head"><h2>Отзывы</h2><span class="lbl">Только реальные клиенты — заменить заглушки</span></div>
+  <div class="rtrack" id="rtrack">
+    <article class="rcard"><q>[Текст реального отзыва клиента — 2–3 предложения о результате и сроках]</q><div class="who"><span class="av"></span><span>[Имя]<br><span class="lbl">[Объект, район]</span></span></div></article>
+    <article class="rcard dark"><q>[Текст реального отзыва клиента]</q><div class="who"><span class="av" style="background:#3A3936"></span><span>[Имя]<br><span class="lbl">[Объект, район]</span></span></div></article>
+    <article class="rcard or"><q>[Текст реального отзыва клиента]</q><div class="who"><span class="av" style="background:rgba(15,15,14,.2)"></span><span>[Имя]<br><span class="lbl" style="color:var(--fg)">[Объект, район]</span></span></div></article>
+    <article class="rcard"><q>[Текст реального отзыва клиента]</q><div class="who"><span class="av"></span><span>[Имя]<br><span class="lbl">[Объект, район]</span></span></div></article>
+    <article class="rcard dark"><q>[Текст реального отзыва клиента]</q><div class="who"><span class="av" style="background:#3A3936"></span><span>[Имя]<br><span class="lbl">[Объект, район]</span></span></div></article>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div><h2>Вопросы</h2><p class="lbl" style="margin-top:20px;max-width:280px">Не нашли ответ — напишите, отвечу в течение часа.</p></div>
+  <div>
+    <div class="qa"><button type="button" aria-expanded="false">Кто покупает материалы?<span class="pl"></span></button><div class="ans"><p>Как удобнее: могу закупить сам и отдать чеки, или работаю из ваших материалов — заранее дам список с количеством.</p></div></div>
+    <div class="qa"><button type="button" aria-expanded="false">Сколько сохнет штукатурка перед шпаклёвкой?<span class="pl"></span></button><div class="ans"><p>Зависит от состава и толщины слоя: гипсовая обычно сохнет от нескольких дней до недели. Точный срок скажу на замере — ускорять высыхание нельзя, иначе пойдут трещины.</p></div></div>
+    <div class="qa"><button type="button" aria-expanded="false">Цена может вырасти по ходу работ?<span class="pl"></span></button><div class="ans"><p>Нет. Смета фиксируется после замера. Меняется только если вы добавляете работы — и только с вашего согласия.</p></div></div>
+    <div class="qa"><button type="button" aria-expanded="false">Сколько будет пыли?<span class="pl"></span></button><div class="ans"><p>Шлифую с пылесосом, укрываю пол и мебель плёнкой, убираю каждый день.</p></div></div>
+    <div class="qa"><button type="button" aria-expanded="false">Есть гарантия?<span class="pl"></span></button><div class="ans"><p>[N] месяцев письменно. Если появится трещина по моей вине — переделаю бесплатно.</p></div></div>
+  </div>
+</section>
+
+<section class="lead" id="lead">
+  <div class="lbox">
+    <div style="display:flex;flex-direction:column;justify-content:space-between;gap:32px">
+      <div><h2>Заявка<br>на замер</h2><p class="lbl" style="margin-top:20px;max-width:340px;font-size:15px">Замер в черте города бесплатно. Можно приложить фото — назову ориентир по цене сразу.</p></div>
+      <div class="area-row"><span class="lbl">Площадь стен</span><b><span id="areaOut">60</span> м²</b><input id="areaIn" type="range" min="10" max="400" step="5" value="60" aria-label="Площадь стен, м²"></div>
+    </div>
+    <form class="lform" id="lform" novalidate>
+      <div class="tchips" role="group" aria-label="Вид работ">
+        <label><input type="radio" name="type" value="Штукатурка" checked><span>Штукатурка</span></label>
+        <label><input type="radio" name="type" value="Шпаклёвка"><span>Шпаклёвка</span></label>
+        <label><input type="radio" name="type" value="Покраска"><span>Покраска</span></label>
+        <label><input type="radio" name="type" value="Под ключ"><span>Под ключ</span></label>
+        <label><input type="radio" name="type" value="Декор"><span>Декор</span></label>
+      </div>
+      <label class="fl"><input type="text" name="name" placeholder=" " autocomplete="name" required><span>Имя</span></label>
+      <label class="fl"><input type="tel" name="phone" placeholder=" " autocomplete="tel" required><span>Телефон</span></label>
+      <label class="fl"><textarea name="msg" rows="2" placeholder=" "></textarea><span>Комментарий</span></label>
+      <label class="upl"><input type="file" name="photos" accept="image/*" multiple id="files"><span>＋</span><span id="filesTxt">Прикрепить фото помещения</span></label>
+      <button class="submit" type="submit"><i></i><em>Отправить заявку</em></button>
+    </form>
+    <div class="done" id="done" aria-live="polite"><b>Спасибо!</b><span style="font-size:18px">Перезвоню в течение часа в рабочее время.</span></div>
+  </div>
+</section>
+
+<footer class="foot" id="contact">
+  <div class="big" id="bigtxt">Позвоните — <span>приеду на замер</span> — Позвоните — <span>приеду на замер</span></div>
+  <div class="row2">
+    <a class="cta-btn" href="tel:+70000000000" style="background:var(--bg);color:var(--fg)">+7 [000] 000-00-00 <i>↗</i></a>
+    <span class="lbl">[Имя Фамилия] · [Город] · © 2026</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Flip.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger, Flip);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let lenis = null;
+
+// words → spans (for scroll reveal)
+const wEl = document.getElementById('words');
+wEl.innerHTML = wEl.textContent.trim().split(/\s+/).map(w => '<span class="wd">' + w + '</span>').join(' ');
+
+// before/after drag (works without GSAP too)
+const box = document.getElementById('baBox'), after = box.querySelector('.after'), handle = document.getElementById('baHandle');
+function setBA(x) {
+  const r = box.getBoundingClientRect();
+  const p = Math.min(100, Math.max(0, (x - r.left) / r.width * 100));
+  after.style.clipPath = 'inset(0 0 0 ' + p + '%)'; handle.style.left = p + '%';
+}
+let drag = false;
+box.addEventListener('pointerdown', e => { drag = true; box.setPointerCapture(e.pointerId); setBA(e.clientX); });
+box.addEventListener('pointermove', e => drag && setBA(e.clientX));
+box.addEventListener('pointerup', () => drag = false);
+
+if (reduce) {
+  document.querySelectorAll('.wd').forEach(s => s.style.opacity = 1);
+  document.querySelector('.zoom .media').style.clipPath = 'none';
+} else {
+  if (window.Lenis) {
+    lenis = new Lenis({ lerp: 0.1 });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+
+  // intro
+  gsap.timeline({ defaults: { ease: 'expo.out' } })
+    .from('.h1 .w', { yPercent: 110, duration: 1.2, stagger: .07 })
+    .from('#pill', { width: 0, duration: 1.4, ease: 'expo.inOut' }, .2)
+    .from('[data-in]', { y: 20, autoAlpha: 0, duration: 1, stagger: .08 }, .5);
+
+  // kinetic weight: headline weight follows the cursor X
+  const h1 = document.getElementById('h1');
+  const wTo = gsap.quickTo(h1, '--w', { duration: .8, ease: 'power3' });
+  document.querySelector('.hero').addEventListener('pointermove', e => wTo(250 + (e.clientX / innerWidth) * 500));
+
+  // hero → pill zooms into fullscreen wall
+  gsap.timeline({ scrollTrigger: { trigger: '.zoom', start: 'top top', end: '+=150%', pin: true, scrub: 1 } })
+    .fromTo('.zoom .media', { clipPath: 'inset(36% 30% 36% 30% round 999px)' }, { clipPath: 'inset(0% 0% 0% 0% round 0px)', ease: 'power2.inOut' })
+    .from('.zoom .cap', { y: 60, autoAlpha: 0, duration: .3 }, .7);
+
+  // words light up while scrolling
+  gsap.to('.wd', { opacity: 1, stagger: .05, ease: 'none',
+    scrollTrigger: { trigger: '.manifest', start: 'top 75%', end: 'bottom 45%', scrub: true } });
+
+  // bento
+  gsap.from('.tile', { y: 60, autoAlpha: 0, scale: .96, duration: 1, ease: 'expo.out', stagger: .08, scrollTrigger: { trigger: '.bento', start: 'top 80%' } });
+  const c = { v: 4 }, cnt = document.getElementById('cnt');
+  gsap.to(c, { v: 0, duration: 2, ease: 'power2.out', onUpdate: () => cnt.textContent = c.v.toFixed(1), scrollTrigger: { trigger: '.bento', start: 'top 70%' } });
+
+  // stacking cards: previous card shrinks & dims as the next one covers it
+  const cards = gsap.utils.toArray('.scard');
+  cards.forEach((card, i) => {
+    const next = cards[i + 1];
+    if (!next) return;
+    gsap.to(card, { scale: .9, filter: 'brightness(.75)', ease: 'none',
+      scrollTrigger: { trigger: next, start: 'top bottom', end: 'top 10%', scrub: true } });
+  });
+
+  // before/after: auto-sweep hint once when it enters
+  const ba = { p: 50 };
+  ScrollTrigger.create({ trigger: '#baBox', start: 'top 65%', once: true, onEnter: () => {
+    gsap.timeline().to(ba, { p: 80, duration: .8, ease: 'power2.inOut', onUpdate: () => { after.style.clipPath = 'inset(0 0 0 ' + ba.p + '%)'; handle.style.left = ba.p + '%'; } })
+      .to(ba, { p: 50, duration: .9, ease: 'power2.inOut', onUpdate: () => { after.style.clipPath = 'inset(0 0 0 ' + ba.p + '%)'; handle.style.left = ba.p + '%'; } });
+  }});
+
+  // gallery: columns drift at different speeds (desktop only)
+  gsap.matchMedia().add('(min-width: 761px)', () => {
+    gsap.utils.toArray('.col').forEach((col, i) => {
+      gsap.fromTo(col, { y: [60, -40, 100][i] }, { y: [-60, 80, -100][i], ease: 'none',
+        scrollTrigger: { trigger: '.cols', start: 'top bottom', end: 'bottom top', scrub: true } });
+    });
+  });
+  // image parallax inside each tile + reveal
+  gsap.utils.toArray('.item').forEach(it => {
+    gsap.fromTo(it.querySelector('svg'), { yPercent: -8 }, { yPercent: 0, ease: 'none',
+      scrollTrigger: { trigger: it, start: 'top bottom', end: 'bottom top', scrub: true } });
+    gsap.from(it, { clipPath: 'inset(100% 0 0 0 round 20px)', duration: 1.2, ease: 'expo.inOut',
+      scrollTrigger: { trigger: it, start: 'top 90%' } });
+  });
+
+  // footer big text drifts with scroll
+  // reviews: endless marquee that slows down on hover
+  const rt = document.getElementById('rtrack');
+  rt.innerHTML += rt.innerHTML;
+  const loop = gsap.to(rt, { xPercent: -50, duration: 40, ease: 'none', repeat: -1 });
+  rt.addEventListener('pointerenter', () => gsap.to(loop, { timeScale: .15, duration: .6 }));
+  rt.addEventListener('pointerleave', () => gsap.to(loop, { timeScale: 1, duration: .6 }));
+  ScrollTrigger.create({ trigger: '.rev', start: 'top bottom', end: 'bottom top',
+    onUpdate: self => gsap.to(loop, { timeScale: 1 + Math.min(Math.abs(self.getVelocity()) / 400, 4), duration: .2, overwrite: true, onComplete: () => gsap.to(loop, { timeScale: 1, duration: .8 }) }) });
+  gsap.from('.rcard', { y: 60, autoAlpha: 0, rotate: 2, duration: 1, ease: 'expo.out', stagger: .06, scrollTrigger: { trigger: '.rev', start: 'top 75%' } });
+
+  // faq + lead entrance
+  gsap.from('.qa', { y: 30, autoAlpha: 0, duration: .9, ease: 'expo.out', stagger: .06, scrollTrigger: { trigger: '.faq', start: 'top 75%' } });
+  gsap.from('.lbox', { clipPath: 'inset(12% 6% 12% 6% round 28px)', duration: 1.4, ease: 'expo.inOut', scrollTrigger: { trigger: '.lead', start: 'top 80%' } });
+  gsap.from('.lform > *', { y: 30, autoAlpha: 0, duration: .9, ease: 'expo.out', stagger: .06, delay: .4, scrollTrigger: { trigger: '.lead', start: 'top 80%' } });
+
+  // footer big text drifts with scroll
+  gsap.fromTo('#bigtxt', { xPercent: 0 }, { xPercent: -40, ease: 'none', scrollTrigger: { trigger: '.foot', start: 'top bottom', end: 'bottom bottom', scrub: .5 } });
+}
+
+// gallery filter — Flip animates tiles to their new places
+const D = reduce ? 0 : 1;
+const items = gsap.utils.toArray('.item');
+document.querySelectorAll('.chip').forEach(chip => chip.addEventListener('click', () => {
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === chip));
+  const f = chip.dataset.f;
+  const state = Flip.getState(items);
+  items.forEach(it => it.style.display = (f === 'all' || it.dataset.cat === f) ? '' : 'none');
+  Flip.from(state, {
+    duration: .9 * D, ease: 'expo.inOut', absolute: true, scale: true,
+    onEnter: els => gsap.fromTo(els, { autoAlpha: 0, scale: .85 }, { autoAlpha: 1, scale: 1, duration: .7 * D, ease: 'expo.out' }),
+    onLeave: els => gsap.to(els, { autoAlpha: 0, scale: .85, duration: .5 * D, ease: 'power2.in' }),
+    onComplete: () => ScrollTrigger.refresh()
+  });
+}));
+
+// lightbox — the tile's media flies into fullscreen and back (Flip)
+const lb = document.getElementById('lb'), lbBox = document.getElementById('lbBox'), lbCap = document.getElementById('lbCap');
+let active = null;
+function openLb(it) {
+  const m = it.querySelector('.m');
+  const state = Flip.getState(m);
+  active = { it, m };
+  lb.classList.add('open'); lbBox.prepend(m);
+  lbCap.textContent = [...it.querySelectorAll('figcaption span')].map(s => s.textContent).join(' · ');
+  if (lenis) lenis.stop();
+  gsap.to(lb, { backgroundColor: 'rgba(15,15,14,.92)', duration: .5 * D });
+  gsap.fromTo('.lb-ui, .lb-close', { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, delay: .45 * D, duration: .4 * D });
+  Flip.from(state, { duration: .9 * D, ease: 'expo.inOut', absolute: true });
+  document.getElementById('lbClose').focus();
+}
+function closeLb() {
+  if (!active) return;
+  const { it, m } = active; active = null;
+  const state = Flip.getState(m);
+  it.prepend(m);
+  gsap.to('.lb-ui, .lb-close', { autoAlpha: 0, duration: .2 * D });
+  gsap.to(lb, { backgroundColor: 'rgba(15,15,14,0)', duration: .5 * D, delay: .3 * D });
+  Flip.from(state, { duration: .8 * D, ease: 'expo.inOut', absolute: true, zIndex: 95,
+    onComplete: () => { lb.classList.remove('open'); if (lenis) lenis.start(); it.focus(); } });
+}
+items.forEach(it => {
+  it.addEventListener('click', () => openLb(it));
+  it.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLb(it); } });
+});
+document.getElementById('lbClose').addEventListener('click', closeLb);
+lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+
+// FAQ accordion (height animated with GSAP)
+document.querySelectorAll('.qa button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const qa = btn.parentElement, ans = qa.querySelector('.ans'), open = btn.getAttribute('aria-expanded') === 'true';
+    document.querySelectorAll('.qa button[aria-expanded="true"]').forEach(b => {
+      if (b === btn) return;
+      b.setAttribute('aria-expanded', 'false');
+      gsap.to(b.parentElement.querySelector('.ans'), { height: 0, duration: .5 * D, ease: 'expo.inOut' });
+      gsap.to(b.querySelector('.pl'), { rotate: 0, backgroundColor: '#E6E4DE', duration: .4 * D });
+    });
+    btn.setAttribute('aria-expanded', String(!open));
+    gsap.to(ans, { height: open ? 0 : 'auto', duration: .6 * D, ease: 'expo.inOut', onComplete: () => ScrollTrigger.refresh() });
+    gsap.to(btn.querySelector('.pl'), { rotate: open ? 0 : 135, backgroundColor: open ? '#E6E4DE' : '#FF5B1F', duration: .5 * D, ease: 'expo.out' });
+  });
+});
+
+// lead form
+const areaIn = document.getElementById('areaIn'), areaOut = document.getElementById('areaOut');
+areaIn.addEventListener('input', () => gsap.to(areaOut, { textContent: areaIn.value, duration: .3 * D, snap: { textContent: 1 } }));
+const files = document.getElementById('files');
+files.addEventListener('change', () => { document.getElementById('filesTxt').textContent = files.files.length ? 'Фото: ' + files.files.length : 'Прикрепить фото помещения'; });
+const submit = document.querySelector('.submit');
+submit.addEventListener('pointerenter', () => gsap.to(submit.querySelector('i'), { y: '0%', duration: .5 * D, ease: 'expo.out' }));
+submit.addEventListener('pointerleave', () => gsap.to(submit.querySelector('i'), { y: '101%', duration: .5 * D, ease: 'expo.out' }));
+document.getElementById('lform').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, bad = [...f.querySelectorAll('[required]')].filter(i => !i.value.trim());
+  if (bad.length) {
+    bad.forEach(i => gsap.fromTo(i.parentElement, { x: -8 }, { x: 0, duration: .5 * D, ease: 'elastic.out(1,.3)' }));
+    bad[0].focus(); return;
+  }
+  // здесь: fetch('/api/lead', { method: 'POST', body: new FormData(f) })
+  const done = document.getElementById('done');
+  gsap.set(done, { visibility: 'visible' });
+  gsap.to(done, { clipPath: 'circle(150% at 80% 90%)', duration: 1.1 * D, ease: 'expo.inOut' });
+  gsap.from('#done > *', { y: 40, autoAlpha: 0, duration: .9 * D, ease: 'expo.out', stagger: .1, delay: .5 * D });
+});
+</script>
+</body>
+</html>
