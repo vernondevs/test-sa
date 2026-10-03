@@ -8,19 +8,31 @@
   if (hasGsap) gsap.registerPlugin(...[window.ScrollTrigger, window.Flip].filter(Boolean));
 
   /* ---------- broken stock photo fallback ---------- */
-  $$('img').forEach(img => {
-    const fail = () => img.classList.add('is-broken');
-    if (img.complete && img.naturalWidth === 0 && img.src) fail();
-    img.addEventListener('error', fail);
-  });
+  // hide only images whose real URL failed; a later successful load always shows them again
+  document.addEventListener('error', e => { const t = e.target; if (t.tagName === 'IMG' && t.getAttribute('src')) t.classList.add('is-broken'); }, true);
+  document.addEventListener('load', e => { if (e.target.tagName === 'IMG') e.target.classList.remove('is-broken'); }, true);
 
   /* ---------- scroll lock ---------- */
+  // Freeze the page (body becomes position: fixed at the current offset) so nothing behind
+  // a modal can scroll: wheel, touch, keyboard, Lenis. Inner modal content keeps its own scroll.
+  let lockedY = 0, isLocked = false;
   const lock = on => {
-    const root = document.documentElement;
-    if (on) root.style.setProperty('--sbw', (innerWidth - root.clientWidth) + 'px');
-    root.classList.toggle('is-locked', on);
-    if (!on) root.style.removeProperty('--sbw');
-    if (lenis) on ? lenis.stop() : lenis.start();
+    const root = document.documentElement, body = document.body;
+    if (on === isLocked) return;
+    isLocked = on;
+    if (on) {
+      lockedY = window.scrollY;
+      root.style.setProperty('--sbw', (innerWidth - root.clientWidth) + 'px');
+      if (lenis) lenis.stop();
+      Object.assign(body.style, { position: 'fixed', top: `-${lockedY}px`, left: '0', right: '0', width: '100%' });
+      root.classList.add('is-locked');
+    } else {
+      root.classList.remove('is-locked');
+      Object.assign(body.style, { position: '', top: '', left: '', right: '', width: '' });
+      root.style.removeProperty('--sbw');
+      window.scrollTo(0, lockedY);
+      if (lenis) { lenis.scrollTo(lockedY, { immediate: true, force: true }); lenis.start(); }
+    }
   };
 
   /* ---------- smooth scroll ---------- */
@@ -131,35 +143,43 @@
   }
   layoutGallery();
   let rT; addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(layoutGallery, 150); });
-  let filtering = false;
+  let filtering = false, outTl = null, inTl = null;
   const cardIn = els => gsap.timeline()
     .fromTo(els, { clipPath: 'inset(100% 0% 0% 0% round 22px)' }, { clipPath: 'inset(0% 0% 0% 0% round 22px)', duration: 1, ease: 'expo.out', stagger: .07 }, 0)
     .fromTo(els.map(e => $('img', e)), { scale: 1.25 }, { scale: 1, duration: 1.4, ease: 'expo.out', stagger: .07 }, 0)
     .fromTo(els.map(e => $('.gitem__cap', e)), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .7, ease: 'power3.out', stagger: .07 }, .35)
     .set(els, { clearProps: 'clipPath' })
     .set(els.map(e => $('img', e)), { clearProps: 'transform' });
+  const resetCards = () => {
+    gsap.set(items, { clearProps: 'clipPath,opacity' });
+    gsap.set(items.map(e => $('img', e)), { clearProps: 'transform' });
+    gsap.set(items.map(e => $('.gitem__cap', e)), { clearProps: 'opacity,transform' });
+  };
   chips.forEach(chip => chip.addEventListener('click', () => {
-    if (filtering || chip.classList.contains('is-active')) return;
+    if (chip.classList.contains('is-active')) return;
     const f = chip.dataset.filter;
     const show = it => f === 'all' || it.dataset.cat === f;
     chips.forEach(c => { const on = c === chip; c.classList.toggle('is-active', on); c.setAttribute('aria-pressed', on); });
     const apply = () => { items.forEach(it => it.classList.toggle('is-hidden', !show(it))); layoutGallery(); };
     const refresh = () => window.ScrollTrigger && ScrollTrigger.refresh();
     if (!hasGsap || reduce) { apply(); refresh(); return; }
-    filtering = true;
     gsap.fromTo(chip, { scale: .92 }, { scale: 1, duration: .6, ease: 'elastic.out(1, .5)' });
-    const current = items.filter(it => !it.classList.contains('is-hidden'));
-    // 1) current cards fold up like a curtain
-    gsap.timeline({ onComplete: () => {
-      apply();
-      gsap.set(current, { clearProps: 'clipPath,opacity' });
+    const runIn = () => {
+      apply(); resetCards(); refresh();
       const next = items.filter(it => !it.classList.contains('is-hidden'));
-      refresh();
-      // 2) new set rises from the bottom with the photo settling inside
-      cardIn(next).eventCallback('onComplete', () => { filtering = false; });
-    } })
+      inTl = cardIn(next).eventCallback('onComplete', () => { filtering = false; inTl = null; });
+    };
+    // a new tab while the previous animation is still running: cut it and show the new set right away
+    if (filtering) {
+      outTl && outTl.kill(); inTl && inTl.kill(); outTl = inTl = null;
+      runIn();
+      return;
+    }
+    filtering = true;
+    const current = items.filter(it => !it.classList.contains('is-hidden'));
+    outTl = gsap.timeline({ onComplete: () => { outTl = null; runIn(); } })
       .to(current.map(e => $('.gitem__cap', e)), { opacity: 0, y: 10, duration: .25, ease: 'power2.in', stagger: .02 }, 0)
-      .to(current, { clipPath: 'inset(0% 0% 100% 0% round 22px)', duration: .55, ease: 'expo.in', stagger: { each: .04, from: 'end' } }, .05);
+      .to(current, { clipPath: 'inset(0% 0% 100% 0% round 22px)', duration: .5, ease: 'expo.in', stagger: { each: .03, from: 'end' } }, .05);
   }));
 
   // first appearance on scroll
@@ -273,13 +293,15 @@
   F('next').addEventListener('click', () => openLightbox(lbIndex + 1));
   F('cta').addEventListener('click', () => closeLightbox());
   lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
-  // block page scroll behind, but let the info panel scroll on its own
-  ['wheel', 'touchmove'].forEach(ev => lb.addEventListener(ev, e => {
-    const panel = e.target.closest('.pv__info, .pv__thumbs, .pv');
-    if (panel && panel.scrollHeight > panel.clientHeight + 1 && matchMedia('(max-width: 900px)').matches) return;
-    if (e.target.closest('.pv__info') && pvInfo.scrollHeight > pvInfo.clientHeight + 1) return;
-    e.preventDefault();
-  }, { passive: false }));
+  // inside the modal: let scrollable parts scroll, swallow everything else
+  const canScroll = el => {
+    for (let n = el; n && n !== lb; n = n.parentElement) {
+      const st = getComputedStyle(n);
+      if (/(auto|scroll)/.test(st.overflowY) && n.scrollHeight > n.clientHeight + 1) return true;
+    }
+    return false;
+  };
+  ['wheel', 'touchmove'].forEach(ev => lb.addEventListener(ev, e => { if (!canScroll(e.target)) e.preventDefault(); }, { passive: false }));
   // swipe between photos on the image
   let sx = null;
   $('.pv__stage', lb).addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
@@ -361,7 +383,6 @@
   const qtyOf = k => ({ walls: val('area'), ceiling: val('ceilArea'), slopes: val('slopes'), decor: val('decorArea'), doors: val('doors'), radiators: val('radiators') })[k];
 
   // on phones show the preview right under the controls, where the choice is made
-  if (matchMedia('(max-width: 820px)').matches) $('.upload', form).before(preview);
 
   // sliders: live value + filled track
   $$('.range', form).forEach(r => {
@@ -452,6 +473,67 @@
   workInputs.forEach(i => i.addEventListener('change', () => updateEst(true)));
   updateEst(false);
 
+  /* ---------- mobile: 3-step form with a sticky price bar ---------- */
+  const isPhone = matchMedia('(max-width: 820px)').matches;
+  let wzGo = null;
+  if (isPhone) {
+    form.classList.add('wizard');
+    const TITLES = ['Що потрібно зробити?', 'Який обсяг?', 'Куди передзвонити?'];
+    const head = document.createElement('div');
+    head.className = 'wz-head';
+    head.innerHTML = `<div class="wz-top"><button type="button" class="wz-back" aria-label="Назад"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><span class="wz-count">Крок <b>1</b> з 3</span></div>
+      <div class="wz-progress"><span></span><span></span><span></span></div><p class="wz-title"></p>`;
+    const steps = [0, 1, 2].map(() => { const d = document.createElement('div'); d.className = 'wz-step'; return d; });
+    // step 1: works; step 2: amounts + plan; step 3: contacts
+    steps[0].append($('fieldset.field', form));
+    $$('[data-qty]', form).forEach(q => steps[1].append(q));
+    steps[1].append(prepHint, preview);
+    steps[2].append($('.form__row', form), $('.upload', form), $('.form__note', form));
+    const err = $('.form__error', form);
+    const bar = document.createElement('div');
+    bar.className = 'wz-bar';
+    bar.innerHTML = `<div class="wz-bar__price"></div><button type="button" class="wz-next">Далі <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>`;
+    $('.wz-bar__price', bar).append($('.form__est', form));
+    form.prepend(head, ...steps);
+    steps[2].after(err);
+    form.append(bar);
+    $('.form__foot', form).hidden = true;
+
+    let cur = 0;
+    const nextBtn = $('.wz-next', bar);
+    wzGo = (to, dir = 1) => {
+      if (to === 1 && !workInputs.some(i => i.checked)) {
+        err.hidden = false; err.textContent = 'Оберіть хоча б один вид робіт.';
+        hasGsap && gsap.fromTo($('.chips', form), { x: -8 }, { x: 0, duration: .5, ease: 'elastic.out(1, .3)' });
+        return;
+      }
+      err.hidden = true;
+      steps.forEach((st, i) => { st.hidden = i !== to; });
+      $$('.wz-progress span', head).forEach((sp, i) => sp.classList.toggle('is-done', i <= to));
+      $('.wz-count b', head).textContent = to + 1;
+      $('.wz-title', head).textContent = TITLES[to];
+      $('.wz-back', head).style.visibility = to ? 'visible' : 'hidden';
+      nextBtn.firstChild.textContent = to === 2 ? 'Надіслати ' : 'Далі ';
+      if (hasGsap && !reduce && to !== cur) gsap.fromTo(steps[to], { y: 14 * dir, opacity: 0 }, { y: 0, opacity: 1, duration: .45, ease: 'power3.out', clearProps: 'transform,opacity' });
+      // bring the top of the form under the header only if it is out of view
+      if (to !== cur) {
+        const top = form.getBoundingClientRect().top, hh = header.offsetHeight + 12;
+        if (top < hh || top > innerHeight * .5) {
+          const y = window.scrollY + top - hh;
+          lenis ? lenis.scrollTo(y, { duration: .6 }) : window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+        }
+      }
+      cur = to;
+    };
+    nextBtn.addEventListener('click', () => cur < 2 ? wzGo(cur + 1, 1) : form.requestSubmit());
+    $('.wz-back', head).addEventListener('click', () => cur > 0 && wzGo(cur - 1, -1));
+    wzGo(0);
+    // hide the global call bar while the form is on screen
+    if (callbar && 'IntersectionObserver' in window) {
+      new IntersectionObserver(([en]) => callbar.classList.toggle('is-muted', en.isIntersecting), { threshold: .15 }).observe(form);
+    }
+  }
+
   phone.addEventListener('input', () => {
     let d = phone.value.replace(/\D/g, '');
     if (!d.startsWith('380')) d = '380' + d.replace(/^3?8?0?/, '');
@@ -494,12 +576,30 @@
       await gsap.to(form, { opacity: 0, y: -20, duration: .5, ease: 'power3.in' });
     }
     form.hidden = true; success.hidden = false; success.classList.add('is-in');
+    { // keep the success card in view after the tall form disappears
+      const top = success.getBoundingClientRect().top, hh = header.offsetHeight + 16;
+      if (top < hh || top > innerHeight * .6) { const y = window.scrollY + top - hh; lenis ? lenis.scrollTo(y, { duration: .6 }) : window.scrollTo({ top: y, behavior: 'smooth' }); }
+    }
     if (hasGsap && !reduce) gsap.fromTo(success.children, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .9, ease: 'expo.out', stagger: .08 });
   });
   $('[data-reset]').addEventListener('click', () => {
-    form.reset(); $$('.range', form).forEach(r => r.dispatchEvent(new Event('input'))); $$('.stepper', form).forEach(st => { $('output', st).value = $('input', st).value; }); updateEst(true); phone.value = '+380 '; uploadText.innerHTML = 'Додати фото стін <em>до 5 файлів</em>';
-    success.hidden = true; success.classList.remove('is-in'); form.hidden = false;
-    hasGsap && gsap.set(form, { opacity: 1, y: 0 });
+    const swap = () => {
+      form.reset(); $$('.range', form).forEach(r => r.dispatchEvent(new Event('input')));
+      $$('.stepper', form).forEach(st => { $('output', st).value = $('input', st).value; });
+      phone.value = '+380 '; uploadText.innerHTML = 'Додати фото стін <em>до 5 файлів</em>';
+      success.hidden = true; success.classList.remove('is-in');
+      if (hasGsap) gsap.set(success, { clearProps: 'all' });
+      form.hidden = false; updateEst(true); wzGo && wzGo(0);
+      if (hasGsap && !reduce) {
+        gsap.fromTo(form, { opacity: 0, y: 30, clipPath: 'inset(0% 0% 100% 0% round 28px)' },
+          { opacity: 1, y: 0, clipPath: 'inset(0% 0% 0% 0% round 28px)', duration: .9, ease: 'expo.out', clearProps: 'clipPath,transform' });
+        gsap.fromTo($$(':scope > *:not([hidden])', form), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .6, ease: 'power3.out', stagger: .05, delay: .15, clearProps: 'opacity,transform' });
+      } else if (hasGsap) gsap.set(form, { opacity: 1, y: 0 });
+      const top = form.getBoundingClientRect().top, hh = header.offsetHeight + 16;
+      if (top < hh || top > innerHeight * .6) { const y = window.scrollY + top - hh; lenis ? lenis.scrollTo(y, { duration: .6 }) : window.scrollTo({ top: y, behavior: 'smooth' }); }
+    };
+    if (!hasGsap || reduce) return swap();
+    gsap.to(success, { opacity: 0, y: -20, scale: .98, duration: .35, ease: 'power2.in', onComplete: swap });
   });
 
   /* ---------- manifest: split words ---------- */
@@ -620,7 +720,7 @@
     const grow = (txt) => { label.textContent = txt || ''; gsap.to(cur, { scale: txt ? 6 : 3, duration: .5, ease: 'expo.out' }); gsap.to(label, { opacity: txt ? 1 : 0, scale: txt ? 1 / 6 : 1, duration: .3 }); };
     const shrink = () => { gsap.to(cur, { scale: 1, duration: .5, ease: 'expo.out' }); gsap.to(label, { opacity: 0, duration: .2 }); };
     $$('a, button, .chip').forEach(el => { el.addEventListener('mouseenter', () => grow()); el.addEventListener('mouseleave', shrink); });
-    $$('.gitem').forEach(el => { el.addEventListener('mouseenter', () => grow('Дивитись')); el.addEventListener('mouseleave', shrink); });
+    $$('.gitem').forEach(el => { el.addEventListener('mouseenter', () => grow()); el.addEventListener('mouseleave', shrink); });
     ba && (ba.addEventListener('mouseenter', () => grow('Тягніть')), ba.addEventListener('mouseleave', shrink));
   }
 
