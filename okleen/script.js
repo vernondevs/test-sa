@@ -49,7 +49,9 @@
     }
   }
   const scrollTo = target => lenis ? lenis.scrollTo(target, { offset: -60 }) : target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
-  $$('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+  const toTop = () => lenis ? lenis.scrollTo(0, { duration: 1.6, easing: t => 1 - Math.pow(1 - t, 4) }) : window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  $$('[data-totop]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); e.stopImmediatePropagation(); closeMenu(); toTop(); }));
+  $$('a[href^="#"]:not([data-totop])').forEach(a => a.addEventListener('click', e => {
     const id = a.getAttribute('href');
     const el = id.length > 1 ? $(id) : document.body;
     if (!el) return;
@@ -59,7 +61,7 @@
   }));
 
   /* ---------- header, progress, call bar ---------- */
-  const header = $('.header'), bar = $('.progress span'), callbar = $('.callbar');
+  const header = $('.header'), bar = $('.progress span'), callbar = $('.callbar'), totop = $('.totop');
   let lastY = 0;
   const onScroll = () => {
     const y = window.scrollY, h = document.documentElement.scrollHeight - innerHeight;
@@ -67,6 +69,7 @@
     header.classList.toggle('is-solid', y > 40);
     header.classList.toggle('is-hidden', y > 400 && y > lastY && !document.body.classList.contains('menu-open'));
     callbar && callbar.classList.toggle('is-visible', y > innerHeight * .6);
+    if (totop) { totop.classList.toggle('is-visible', y > innerHeight * 1.2); totop.style.setProperty('--off', 1 - (h > 0 ? y / h : 0)); }
     lastY = y;
   };
   addEventListener('scroll', onScroll, { passive: true });
@@ -651,7 +654,8 @@
     scrollTrigger: { trigger: h, start: 'top 88%', once: true } }));
 
   // Services: sticky stack, previous card shrinks when the next one arrives
-  const cards = $$('.scard');
+  const cards = matchMedia('(min-width: 821px)').matches ? $$('.scard') : [];
+  $$('.scard').forEach(card => { if (!cards.length) gsap.from(card, { y: 40, opacity: 0, duration: .9, ease: 'expo.out', scrollTrigger: { trigger: card, start: 'top 90%', once: true } }); });
   cards.forEach((card, i) => {
     const next = cards[i + 1];
     if (!next) return;

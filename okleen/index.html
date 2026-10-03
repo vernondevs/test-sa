@@ -112,7 +112,7 @@
           </article>
           <figure class="bcard bcard--photo" data-reveal>
             <img src="https://images.pexels.com/photos/7218029/pexels-photo-7218029.jpeg?auto=compress&cs=tinysrgb&w=1400" alt="Фарбування стіни валиками" loading="lazy" width="1400" height="933" data-parallax>
-            <figcaption><b>Вітальня, Салтівка</b><span>2 шари миючої матової фарби, 3 дні</span></figcaption>
+            <figcaption class="promise"><span class="promise__head"><b>Що ви отримуєте</b><em>Вітальня, Салтівка</em></span><ul><li><span class="promise__num">01</span><span><b>0 грн доплат</b>Сума з кошторису не зростає по ходу робіт.</span></li><li><span class="promise__num">02</span><span><b>Чисто щодня</b>Плівка на підлозі, скотч по краях, пилосос після шліфування.</span></li><li><span class="promise__num">03</span><span><b>Один відповідальний</b>Від заміру до здачі на зв’язку той, хто фарбує.</span></li></ul></figcaption>>
           </figure>
           <article class="bcard bcard--accent" data-reveal>
             <header class="bcard__top"><span>У Харкові</span><svg class="ic " viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></header>
@@ -130,11 +130,7 @@
             <p class="bcard__text">за договором: відшарування чи плями переробляю безкоштовно</p>
           </article>
         </div>
-        <ul class="perks">
-          <li data-reveal><span class="perks__ic"><svg class="ic " viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span><div><b>0 грн доплат</b><p>Сума з кошторису не зростає по ходу робіт.</p></div></li>
-          <li data-reveal><span class="perks__ic"><svg class="ic " viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg></span><div><b>Чисто щодня</b><p>Плівка на підлозі, скотч по краях, пилосос після шліфування.</p></div></li>
-          <li data-reveal><span class="perks__ic"><svg class="ic " viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg></span><div><b>Один відповідальний</b><p>Від заміру до здачі на зв’язку той, хто фарбує.</p></div></li>
-        </ul>
+        
       </div>
     </section>
 
@@ -446,13 +442,19 @@
       <div><span class="footer__label">Месенджери</span><a href="https://t.me/your_username">Telegram</a><a href="viber://chat?number=%2B380630000000">Viber</a></div>
       <div><span class="footer__label">Графік</span><p>Пн–Сб, 8:00–20:00<br>Замір безкоштовно</p></div>
     </div>
-    <div class="container footer__bottom"><span>© 2026 Оклен</span><a href="#top">Вгору ↑</a></div>
+    <div class="container footer__bottom"><span>© 2026 Оклен</span><a href="#top" class="footer__top" data-totop>Вгору <span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span></a></div>
   </footer>
 
   <nav class="callbar" aria-label="Швидкий зв’язок">
     <a href="tel:+380630000000">Подзвонити</a>
     <a href="#form" class="callbar__accent">Розрахувати</a>
   </nav>
+
+  <button class="totop" type="button" aria-label="Прокрутити вгору" data-totop>
+    <svg class="totop__ring" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="25" pathLength="1"/></svg>
+    <span class="totop__ic"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></span>
+  </button>
+
 
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>

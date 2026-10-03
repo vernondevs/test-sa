@@ -214,13 +214,14 @@ html { scrollbar-color: var(--ink) var(--paper); scrollbar-width: thin; }
 .bcard--photo figcaption { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 2px; width: fit-content; max-width: calc(100% - 32px); background: rgba(252, 251, 247, .94); backdrop-filter: blur(8px); border-radius: 16px; padding: 12px 16px; }
 .bcard--photo figcaption b { font: 500 16px var(--f-display); letter-spacing: -.02em; }
 .bcard--photo figcaption span { font-size: 13px; color: var(--muted); }
-.perks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 14px; background: var(--white); border-radius: var(--r-lg); box-shadow: inset 0 0 0 1.5px var(--line); overflow: hidden; }
-.perks li { display: flex; align-items: center; gap: 18px; padding: clamp(20px, 2vw, 28px); }
-.perks li + li { box-shadow: inset 1.5px 0 0 var(--line); }
-.perks__ic { flex-shrink: 0; width: 52px; height: 52px; border-radius: 16px; background: var(--ink); color: var(--accent); display: grid; place-items: center; }
-.perks__ic svg { width: 22px; height: 22px; color: var(--accent); stroke-width: 1.4; }
-.perks b { display: block; font: 600 17px/1.2 var(--f-display); letter-spacing: -.03em; margin-bottom: 4px; }
-.perks p { font-size: 14px; line-height: 1.45; color: var(--muted); }
+.bcard--photo .promise { left: 16px; right: 16px; bottom: 16px; width: auto; max-width: 420px; padding: 20px 22px; gap: 14px; border-radius: 22px; background: var(--ink); color: var(--light); backdrop-filter: none; }
+.promise__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.promise__head b { font: 700 15px var(--f-display); letter-spacing: -.03em; color: var(--accent); text-transform: uppercase; }
+.promise__head em { font-style: normal; font-size: 12px; color: var(--light-muted); }
+.promise ul { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.promise li { display: grid; grid-template-columns: 34px 1fr; align-items: baseline; gap: 10px; padding: 12px 0; border-top: 1px solid rgba(247, 244, 234, .12); font-size: 13px; line-height: 1.4; color: var(--light-muted); }
+.promise li b { display: block; font: 600 15px/1.25 var(--f-display); letter-spacing: -.03em; color: var(--light); margin-bottom: 3px; }
+.promise__num { font: 500 13px/1 var(--f-display); color: var(--accent); }
 
 /* ===== Services stack ===== */
 .stack { display: grid; gap: 24px; }
@@ -594,20 +595,20 @@ html { scrollbar-color: var(--ink) var(--paper); scrollbar-width: thin; }
   .hero__cta .btn { width: 100%; }
   .ticker { bottom: calc(env(safe-area-inset-bottom, 0px) + 0px); }
 
-  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: 300px repeat(2, minmax(210px, auto)); gap: 10px; }
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(440px, auto) repeat(2, minmax(210px, auto)); gap: 10px; }
   .bcard { padding: 16px; gap: 10px; }
   .bcard--photo { grid-column: span 2; grid-row: 1; }
+  .bcard--photo .promise { left: 10px; right: 10px; bottom: 10px; padding: 14px; }
+  .promise__head em { display: none; }
   .bcard__top svg { width: 38px; height: 38px; padding: 10px; }
   .bcard__num { font-size: 46px; }
   .bcard__text { padding-top: 10px; }
   .bcard__num small { font-size: 14px; }
   .bcard__text { font-size: 13px; }
-  .perks { grid-template-columns: 1fr; }
-  .perks li { padding: 16px 18px; }
-  .perks li + li { box-shadow: inset 0 1.5px 0 var(--line); }
-  .perks__ic { width: 44px; height: 44px; border-radius: 14px; }
 
-  .scard { min-height: auto; top: calc(var(--header-h) + 8px + var(--i, 0) * 10px); }
+  /* phones: plain list — a sticky stack would cover prices before they can be read */
+  .scard { position: relative; top: auto; min-height: auto; box-shadow: none; }
+  .stack { gap: 12px; }
   .scard__body { grid-template-columns: 1fr; }
   .scard .btn { align-self: stretch; }
 
@@ -682,3 +683,25 @@ html.is-locked body { overflow: hidden; padding-right: var(--sbw, 0px); }
 html.is-locked .header { right: var(--sbw, 0px); }
 html.is-locked .callbar { right: calc(12px + var(--sbw, 0px)); }
 .lightbox, .menu { overscroll-behavior: contain; }
+
+/* ===== Back to top ===== */
+.footer__top { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--ink); color: var(--accent) !important; transition: transform .5s var(--ease); }
+.footer__top span { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--ink); display: grid; place-items: center; transition: transform .5s var(--ease); }
+.footer__top .ic { width: 16px; height: 16px; stroke-width: 2.2; }
+.footer__top:hover span { transform: translateY(-3px); }
+.footer__bottom { align-items: center; }
+
+.totop { position: fixed; z-index: 55; right: 24px; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); width: 56px; height: 56px; border: 0; border-radius: 50%; padding: 0; background: var(--ink); color: var(--accent); cursor: pointer; display: grid; place-items: center; box-shadow: 0 10px 30px rgba(18, 18, 17, .25); opacity: 0; transform: translateY(20px) scale(.8); pointer-events: none; transition: opacity .4s, transform .6s var(--ease); }
+.totop.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+.totop__ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.totop__ring circle { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: var(--off, 1); }
+.totop__ic { position: relative; width: 20px; height: 20px; overflow: hidden; }
+.totop__ic .ic { position: absolute; inset: 0; width: 20px; height: 20px; stroke-width: 2.2; transition: transform .5s var(--ease); }
+.totop__ic .ic:last-child { transform: translateY(120%); }
+.totop:hover .totop__ic .ic:first-child { transform: translateY(-120%); }
+.totop:hover .totop__ic .ic:last-child { transform: none; }
+.totop:active { transform: scale(.92); }
+@media (max-width: 820px) {
+  .totop { right: 14px; width: 48px; height: 48px; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }
+  .callbar:not(.is-visible) ~ .totop, .callbar.is-muted ~ .totop { bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); }
+}
